@@ -1,9 +1,9 @@
 import os
 import sys
-from pathlib import Path
-from dotenv import load_dotenv
 from datetime import timedelta
+from pathlib import Path
 
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -27,7 +27,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'rest_framework_simplejwt',
     'rest_framework',
+    "django_filters",
+    "drf_yasg",
     "users",
+    "posts",
 ]
 
 REST_FRAMEWORK = {
@@ -55,7 +58,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

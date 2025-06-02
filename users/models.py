@@ -1,29 +1,21 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
-from academy.models import Course
+from django.utils import timezone
 
 
 class User(AbstractUser):
 
     email = models.EmailField(
-        unique=True, verbose_name="Почта", help_text="Укажите почту"
+        verbose_name="Почта", help_text="Укажите почту"
     )
 
-    phone = models.CharField(
+    phone_number = models.CharField(
         max_length=35,
-        blank=True,
-        null=True,
+        unique=True,
         verbose_name="Телефон",
         help_text="Укажите Телефон",
-    )
-
-    city = models.CharField(
-        max_length=35,
-        blank=True,
-        null=True,
-        verbose_name="Город",
-        help_text="Укажите Город",
     )
 
     avatar = models.ImageField(
@@ -34,7 +26,7 @@ class User(AbstractUser):
         help_text="Установите аватар",
     )
 
-    USERNAME_FIELD = "email"
+    USERNAME_FIELD = "phone_number"
     REQUIRED_FIELDS = ["username"]
 
     class Meta:
@@ -42,47 +34,33 @@ class User(AbstractUser):
         verbose_name_plural = "Пользователи"
 
     def __str__(self):
-        return self.email
+        return f"{self.username} ({self.phone_number})"
 
 
-class Payment(models.Model):
-    PAYMENT_METHOD_CHOICES = [
-        ("cash", "Наличные"),
-        ("transfer", "Перевод на счет"),
-    ]
-
-    user = models.ForeignKey("users.User", on_delete=models.CASCADE)
-    payment_date = models.DateTimeField(auto_now_add=True)
-    course = models.ForeignKey(
-        "academy.Course",
+class AuthorSubscription(models.Model):
+    subscriber = models.ForeignKey(
+        User,
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="payments",
+        related_name='author_subscriptions'
     )
-    lesson = models.ForeignKey(
-        "academy.Lesson",
+    author = models.ForeignKey(
+        User,
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="payments",
+        related_name='subscribers'
     )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    stripe_subscription_id = models.CharField(max_length=100, blank=True)
 
     class Meta:
-        verbose_name = "Платеж"
-        verbose_name_plural = "Платежи"
+        unique_together = ('subscriber', 'author')
 
-    def __str__(self):
-        return f"Платеж от {self.user.username} на сумму {self.amount} {self.payment_method}"
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.expires_at = timezone.now() + timedelta(days=30)
+        super().save(*args, **kwargs)
 
-
-class Subscription(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ("user", "course")
-        verbose_name = "Подписка"
-        verbose_name_plural = "Подписки"
+    @property
+    def days_remaining(self):
+        return (self.expires_at - timezone.now()).days if self.is_active else 0

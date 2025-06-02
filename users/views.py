@@ -1,90 +1,102 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, status
-from rest_framework.filters import OrderingFilter
-from rest_framework.generics import (
-    CreateAPIView,
-    DestroyAPIView,
-    RetrieveAPIView,
-    UpdateAPIView,
-    get_object_or_404,
-)
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
+import time
+from datetime import timedelta
 
-from academy.models import Course
-from users.filters import PaymentFilter
-from users.models import Payment, Subscription, User
-from users.serializers import PaymentSerializer, UserSerializer
-from users.services import (
-    create_stripe_product,
-    create_stripe_product_price,
-    create_stripe_sessions,
-)
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.core.mail import send_mail
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from django.views import View
+
+from users.forms import UserRegistrationForm, PhoneLoginForm
+from users.management.commands.sms_auth import send_verification_code
+from users.models import User
 
 
-class UserCreateAPIView(CreateAPIView):
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
-    permission_classes = (AllowAny,)
+verification_codes = {}
+registration_sessions = {}
 
-    def perform_create(self, serializer):
-        user = serializer.save(is_active=True)
-        user.set_password(user.password)
-        user.save()
-
-
-class UserUpdateAPIView(UpdateAPIView):
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
-    permission_classes = (AllowAny,)
-
-
-class UserRetrieveAPIView(RetrieveAPIView):
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
-    permission_classes = (AllowAny,)
-
-
-class UserDestroyAPIView(DestroyAPIView):
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
-    permission_classes = (AllowAny,)
+def register(request):
+    if request.method == "POST":
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            phone = form.cleaned_data['phone_number']
+            # Генерируем и отправляем код
+            code = send_verification_code(phone)
+            if code:
+                # Сохраняем данные до подтверждения
+                registration_sessions[phone] = {
+                    'password': form.cleaned_data['password'],
+                    'username': form.cleaned_data['username'],
+                    'email': form.cleaned_data['email'],
+                    'created_at': time.time()
+                }
+                verification_codes[phone] = str(code)
+                return redirect('users:confirm_code', phone=phone)
+            else:
+                messages.error(request, "Не удалось отправить код. Попробуйте позже.")
+    else:
+        form = UserRegistrationForm()
+    return render(request, "users/register.html", {"form": form})
 
 
-class PaymentListView(generics.ListAPIView):
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-    filter_backends = (DjangoFilterBackend, OrderingFilter)
-    filterset_class = PaymentFilter
-    ordering_fields = ["payment_date"]
-    ordering = ["payment_date"]
+def confirm_code(request, phone):
+    if request.method == "POST":
+        input_code = request.POST.get('code')
+        real_code = verification_codes.get(phone)
 
+        if not real_code:
+            messages.error(request, "Время действия кода истек или код не найден.")
+            return redirect('users:register')
 
-class SubscriptionAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+        if input_code == real_code:
+            data = registration_sessions.get(phone)
+            if data:
+                user = User(
+                    username=data['username'],
+                    email=data['email'],
+                    phone_number=phone,
+                )
+                user.set_password(data['password'])
+                user.is_active = True
+                user.save()
 
-    def post(self, *args, **kwargs):
-        user = self.request.user
-        course_id = self.request.data.get("course")
-        course_item = get_object_or_404(Course, id=course_id)
+                # Очистить временные данные
+                verification_codes.pop(phone, None)
+                registration_sessions.pop(phone, None)
 
-        product_id = create_stripe_product()
-        price_id = create_stripe_product_price(product_id, amount=5000)
-
-        session_id, session_url = create_stripe_sessions(price_id)
-
-        subs_item, created = Subscription.objects.get_or_create(
-            user=user, course=course_item
-        )
-
-        if created:
-            message = "Подписка добавлена"
+                messages.success(request, "Вы успешно зарегистрированы!")
+                return redirect('users:login')
+            else:
+                messages.error(request, "Данные регистрации не найдены.")
         else:
-            subs_item.delete()
-            message = "Подписка удалена"
+            messages.error(request, "Неверный код подтверждения.")
+    return render(request, "users/confirm_code.html", {"phone": phone})
 
-        return Response(
-            {"message": message, "session_id": session_id, "session_url": session_url},
-            status=status.HTTP_200_OK,
-        )
+
+def login_view(request):
+    if request.method == "POST":
+        form = PhoneLoginForm(request, data=request.POST)
+        if form.is_valid():
+            print("Form errors:", form.errors)
+            user = form.get_user()
+            if user:
+                login(request, user)
+                return redirect("home")
+            else:
+                messages.error(request, "Неверный телефон или пароль.")
+        else:
+            messages.error(request, "Проверьте правильность данных.")
+    else:
+        form = PhoneLoginForm()
+
+    return render(request, "users/login.html", {"form": form})
+
+
+class LogoutView(View):
+    def get(self, request):
+        logout(request)
+        return redirect("home")

@@ -33,3 +33,21 @@ def create_stripe_sessions(price_id):
         mode="subscription",
     )
     return session.get("id"), session.get("url")
+
+# import stripe
+# from datetime import timedelta
+#
+#
+# def create_subscription(user, author):
+#     subscription = stripe.Subscription.create(
+#         customer=user.stripe_customer_id,
+#         items=[{'price': 'price_monthly_subscription'}],
+#         trial_period_days=7
+#     )
+#
+#     AuthorSubscription.objects.create(
+#         subscriber=user,
+#         author=author,
+#         expires_at=timezone.now() + timedelta(days=30),
+#         stripe_subscription_id=subscription.id
+#     )
