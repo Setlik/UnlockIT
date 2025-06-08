@@ -9,35 +9,59 @@ from .models import User
 
 
 class UserRegistrationForm(forms.ModelForm):
-    username = forms.CharField(label="Никнейм", widget=forms.TextInput(
-        attrs={'placeholder': 'Введите свой никнейм', 'class': 'form-control'}))
-    password = forms.CharField(label="Введите пароль", widget=forms.PasswordInput(
-        attrs={'placeholder': 'Введите пароль', 'class': 'form-control'}))
-    password_confirm = forms.CharField(
-        widget=forms.PasswordInput(attrs={'placeholder': 'Подтвердите свой пароль', 'class': 'form-control'}),
-        label="Подтвердите пароль"
+    username = forms.CharField(
+        label="Никнейм",
+        widget=forms.TextInput(
+            attrs={"placeholder": "Введите свой никнейм", "class": "form-control"}
+        ),
     )
-    phone_number = forms.CharField(label="Телефон",
-                                   widget=forms.TextInput(attrs={'placeholder': 'Введите номер в формате +7XXXXXXXXXX',
-                                                                 'class': 'form-control'}),
-                                   validators=[
-                                       RegexValidator(regex=r'^\+?7\d{10}$',
-                                                      message="Введите номер в формате +7XXXXXXXXXX",
-                                                      code='invalid_phone_number')])
-    email = forms.EmailField(label="Почта", widget=forms.EmailInput(attrs={'placeholder': 'Введите вашу почту', 'class': 'form-control'}))
+    password = forms.CharField(
+        label="Введите пароль",
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "Введите пароль", "class": "form-control"}
+        ),
+    )
+    password_confirm = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "Подтвердите свой пароль", "class": "form-control"}
+        ),
+        label="Подтвердите пароль",
+    )
+    phone_number = forms.CharField(
+        label="Телефон",
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "Введите номер в формате +7XXXXXXXXXX",
+                "class": "form-control",
+            }
+        ),
+        validators=[
+            RegexValidator(
+                regex=r"^\+?7\d{10}$",
+                message="Введите номер в формате +7XXXXXXXXXX",
+                code="invalid_phone_number",
+            )
+        ],
+    )
+    email = forms.EmailField(
+        label="Почта",
+        widget=forms.EmailInput(
+            attrs={"placeholder": "Введите вашу почту", "class": "form-control"}
+        ),
+    )
 
     class Meta:
         model = User
         fields = ["username", "phone_number", "email", "password"]
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            "username": forms.TextInput(attrs={"class": "form-control"}),
+            "phone_number": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
         }
 
     def clean_phone_number(self):
-        phone_number = self.cleaned_data['phone_number']
-        if not re.match(r'^\+?7\d{10}$', phone_number):
+        phone_number = self.cleaned_data["phone_number"]
+        if not re.match(r"^\+?7\d{10}$", phone_number):
             raise ValidationError("Введите номер в формате +7XXXXXXXXXX")
         return phone_number
 
@@ -60,16 +84,23 @@ class UserRegistrationForm(forms.ModelForm):
 
 
 class PhoneLoginForm(AuthenticationForm):
-    username = forms.CharField(label="Телефон",
-                               widget=forms.TextInput(attrs={'placeholder': 'Введите номер в формате +7XXXXXXXXXX'}),
-                               validators=[
-                                   RegexValidator(
-                                       regex=r'^\+?7\d{10}$',
-                                       message="Введите номер в формате +7XXXXXXXXXX",
-                                       code='invalid_phone_number'
-                                   )
-                               ])
-    password = forms.CharField(label="Пароль", widget=forms.TextInput(attrs={'placeholder': 'Введите свой пароль'}))
+    username = forms.CharField(
+        label="Телефон",
+        widget=forms.TextInput(
+            attrs={"placeholder": "Введите номер в формате +7XXXXXXXXXX"}
+        ),
+        validators=[
+            RegexValidator(
+                regex=r"^\+?7\d{10}$",
+                message="Введите номер в формате +7XXXXXXXXXX",
+                code="invalid_phone_number",
+            )
+        ],
+    )
+    password = forms.CharField(
+        label="Пароль",
+        widget=forms.TextInput(attrs={"placeholder": "Введите свой пароль"}),
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

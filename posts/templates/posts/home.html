@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная страница</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        #container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+        .filters {
+            width: 200px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            box-sizing: border-box;
+            border-right: 1px solid #dee2e6;
+        }
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        .subscriptions {
+            width: 250px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            border-left: 1px solid #dee2e6;
+        }
+        .message-card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .author-info {
+            display: flex;
+            align-items: center;
+        }
+        .message-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+{% extends 'posts/base.html' %}
+{% load static %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<div id="container">
+    <!-- Левая панель - список пользователей -->
+    <div class="filters">
+        <h5 class="mb-3"><i class="bi bi-people"></i> Пользователи</h5>
+        <div class="list-group">
+            {% for site_user in all_users %}
+            {% if site_user.username %}
+            <a href="{% url 'posts:user_posts' site_user.username %}"
+               class="list-group-item list-group-item-action {% if site_user == current_user %}active{% endif %}">
+                <div class="d-flex align-items-center">
+                    {% if site_user.profile.avatar %}
+                    <img src="{{ site_user.profile.avatar.url }}" class="rounded-circle me-2" width="30" height="30"
+                         alt="{{ site_user.username }}">
+                    {% else %}
+                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2"
+                         style="width: 30px; height: 30px;">
+                        <i class="bi bi-person-fill" style="font-size: 1rem;"></i>
+                    </div>
+                    {% endif %}
+                    <span>{{ site_user.username }}</span>
+                </div>
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Центральный контент -->
+    <div class="content">
+        <div class="container mt-3">
+            <h2 class="mb-4">
+                <i class="bi bi-file-earmark-post"></i>
+                {% if current_user == request.user %}
+                Мои публикации
+                {% else %}
+                Публикации {{ current_user.username }}
+                {% endif %}
+            </h2>
+            {% for post in posts %}
+            <div class="message-card card mb-3">
+                <div class="card-body">
+
+                    <!-- Заголовок и кнопки управления -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">{{ post.title }}</h5>
+                        {% if post.owner == request.user %}
+                        <div>
+                            <a href="{% url 'posts:post_edit' post.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'posts:post_delete' post.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Информация о публикации -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> {{ post.created_at|date:"d.m.Y H:i" }}
+                        </small>
+                        <span class="badge
+                            {% if post.price_type == 'paid' %}bg-danger
+                            {% elif post.price_type == 'subscription' %}bg-warning text-dark
+                            {% else %}bg-success{% endif %}">
+                            {{ post.get_price_type_display }}
+                        </span>
+                    </div>
+
+                    <!-- Содержимое -->
+                    <p class="card-text">
+                        {% if post.owner == request.user or post.price_type == 'free' %}
+                        {{ post.content }}
+                        {% else %}
+                        {{ post.content|truncatechars:150 }}
+                    <div class="alert alert-info mt-2">
+                        {% if post.price_type == 'paid' %}
+                        <i class="bi bi-coin"></i> Полный текст доступен за {{ post.price }}₽
+                        {% else %}
+                        <i class="bi bi-person-check"></i> Доступно по подписке
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                {% if current_user == request.user %}
+                У вас пока нет публикаций.
+                <a href="{% url 'posts:create_post' %}" class="alert-link">Создать первую публикацию</a>
+                {% elif current_user == is_authenticated %}
+                Зарегистрируйтесь или войдите в свой аккаунт что бы разблокировать возможности нашего сайта!
+                {% else %}
+                У пользователя пока нет публикаций
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Правая панель - статистика -->
+    <div class="subscriptions">
+        <h5 class="mb-3"><i class="bi bi-graph-up"></i>Ваша cтатистика</h5>
+        <div class="card">
+            <div class="card-body">
+                {% if current_user == request.user %}
+                <p class="card-text">Подписчиков: {{ profile_user.subscriptions_received.count }}</p>
+                <p class="card-text">Публикаций: {{ posts|length }}</p>
+                {% else %}
+                <p class="card-text">Вы должны войти что бы увидеть свою статистику</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+</body>
+</html>

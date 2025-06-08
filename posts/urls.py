@@ -1,21 +1,17 @@
 from django.urls import path
 
-from posts.views import PostListAPIView, PostCreateAPIView, PostUpdateAPIView, PostRetrieveAPIView, PostDestroyAPIView
+from posts import views
+from posts.views import PostCreateView
 
-app_name = 'posts'
+app_name = "posts"
 
 urlpatterns = [
-    path("posts/", PostListAPIView.as_view(), name="posts_list"),
-    path("posts/create/", PostCreateAPIView.as_view(), name="posts_create"),
-    path(
-        "posts/<int:pk>/update/", PostUpdateAPIView.as_view(), name="posts_update"
-    ),
-    path("posts/<int:pk>/", PostRetrieveAPIView.as_view(), name="posts_retrieve"),
-    path(
-        "posts/<int:pk>/delete/",
-        PostDestroyAPIView.as_view(),
-        name="posts_delete",
-    ),
+    path("", views.HomeView.as_view(), name="home"),
+    # path('payments/', PostPurchaseListView.as_view(), name='payment-list'),
+    path("create/", PostCreateView.as_view(), name="create_post"),
+    path("<int:pk>/", views.PostDetailView.as_view(), name="post_detail"),
+    path("<int:pk>/edit/", views.PostUpdateView.as_view(), name="post_edit"),
+    path("<int:pk>/delete/", views.PostDeleteView.as_view(), name="post_delete"),
+    path("user/<str:username>/", views.UserPostsView.as_view(), name="user_posts"),
+    path("<int:post_id>/buy/", views.PostBuyView.as_view(), name="post_buy"),
 ]
-
-# urlpatterns += router.urls

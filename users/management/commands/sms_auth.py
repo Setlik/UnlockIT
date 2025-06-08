@@ -1,30 +1,28 @@
 import os
-
-import requests
 import random
 
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
 verification_codes = {}
 
+
 def send_verification_code(phone_number):
     code = random.randint(100000, 999999)
     message_text = f"Ваш код подтверждения: {code}"
 
     data = {
-        'api_id': os.getenv('API_SMS_TOKEN'),
-        'to': phone_number,
-        'msg': message_text,
-        'json': 1,
-        'test': 0
+        "api_id": os.getenv("API_SMS_TOKEN"),
+        "to": phone_number,
+        "msg": message_text,
+        "json": 1,
+        "test": 0,
     }
 
     try:
-        response = requests.post('https://sms.ru/sms/send', data=data)
-        # print('Ответ status code:', response.status_code)
-        # print('Response text:', response.text)
+        response = requests.post("https://sms.ru/sms/send", data=data)
         response_data = response.json()
 
         if response.status_code == 200:
@@ -46,6 +44,7 @@ def send_verification_code(phone_number):
         print(f"Ошибка при отправке запроса: {str(e)}")
 
     return None
+
 
 def main():
     phone = input("Введите номер телефона (в формате +7xxxxxxxxxx): ")
