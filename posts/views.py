@@ -15,6 +15,7 @@ from posts.models import Post
 
 class HomeView(ListView):
     model = Post
+    paginate_by = 10
     template_name = "posts/home.html"
     context_object_name = "posts"
 
@@ -52,9 +53,6 @@ class UserPostsView(ListView):
     def get_queryset(self):
         user = get_object_or_404(get_user_model(), username=self.kwargs["username"])
         queryset = user.posts.all()
-
-        if not self.request.user.is_authenticated:
-            queryset = queryset.filter(price_type="free")
 
         return queryset.order_by("-created_at")
 

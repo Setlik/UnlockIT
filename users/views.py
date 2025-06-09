@@ -1,6 +1,7 @@
 import time
 
 import stripe
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
 from django.shortcuts import redirect, render
@@ -13,7 +14,7 @@ from users.models import AuthorSubscription, User
 
 verification_codes = {}
 registration_sessions = {}
-
+stripe.api_key = settings.STRIPE_API_KEY
 
 def register(request):
     if request.method == "POST":
@@ -32,6 +33,8 @@ def register(request):
                 return redirect("users:confirm_code", phone=phone)
             else:
                 messages.error(request, "Не удалось отправить код. Попробуйте позже.")
+        else:
+            print("Errors in registration form:", form.errors)
     else:
         form = UserRegistrationForm()
     return render(request, "users/register.html", {"form": form})
@@ -85,7 +88,6 @@ def login_view(request):
             messages.error(request, "Проверьте правильность данных.")
     else:
         form = PhoneLoginForm()
-
     return render(request, "users/login.html", {"form": form})
 
 
@@ -104,7 +106,7 @@ class SubscriptionPaymentView(View):
                 subscriber=request.user, author=author, is_active=True
             ).exists(),
         }
-        return render(request, "users/subscription_payment.html", context)
+        return render(request, "subscription/subscription_payment.html", context)
 
     def post(self, request, author_pk):
         author = get_object_or_404(get_user_model(), pk=author_pk)

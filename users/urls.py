@@ -27,4 +27,9 @@ urlpatterns = [
         SubscriptionCancelView.as_view(),
         name="subscription_cancel",
     ),
+    path(
+        "subscription/payment/<int:author_pk>/",
+        SubscriptionPaymentView.as_view(),
+        name="subscription_payment",
+    ),
 ]
