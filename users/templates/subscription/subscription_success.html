@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Успешная подписка{% endblock %}
+
+{% block content %}
+<div class="alert alert-success mt-5">
+    <h4 class="alert-heading">Подписка оформлена успешно!</h4>
+    <p>Спасибо за подписку на контент пользователя {{ author.username }}.</p>
+    <hr>
+    <p class="mb-0">Теперь вам доступен весь эксклюзивный контент.</p>
+    <a href="{% url 'posts:user_posts' author.username %}" class="btn btn-primary mt-3">
+        Вернуться к публикациям
+    </a>
+</div>
+{% endblock %}

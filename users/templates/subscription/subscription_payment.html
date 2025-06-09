@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-info">
+        <h1>Оплата подписки</h1>
+        <p>Нажмите кнопку, чтобы оплатить и оформить подписку.</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit">Оплатить</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

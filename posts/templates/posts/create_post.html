@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная страница</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+</head>
+<body>
+{% extends 'posts/base.html' %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">Создание новой публикации</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- Вывод ошибок формы -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Заголовок публикации -->
+                        <div class="mb-3">
+                            {{ form.title.label_tag }}
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.title.errors.as_text }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.title.help_text }}</div>
+                        </div>
+
+                        <!-- Описание публикации -->
+                        <div class="mb-3">
+                            {{ form.content.label_tag }}
+                            {{ form.content }}
+                            {% if form.content.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.content.errors.as_text }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.content.help_text }}</div>
+                        </div>
+
+                        <!-- Тип доступа -->
+                        <div class="mb-3">
+                            {{ form.price_type.label_tag }}
+                            {% for radio in form.price_type %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            {% if form.price_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.price_type.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Цена -->
+                        <div class="mb-3">
+                            {{ form.price.label_tag }}
+                            <div class="input-group">
+                                {{ form.price }}
+                                <span class="input-group-text">₽</span>
+                            </div>
+                            {% if form.price.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.price.errors.as_text }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.price.help_text }}</div>
+                        </div>
+
+                        <!-- Кнопка отправки -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Опубликовать</button>
+                            <a href="{% url 'posts:home' %}" class="btn btn-outline-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}
+</body>
+</html>

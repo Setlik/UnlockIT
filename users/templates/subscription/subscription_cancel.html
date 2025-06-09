@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-info">
+        <h4>Оформление подписки отменено</h4>
+        <p>Вы можете оформить подписку в любое время.</p>
+        <a href="{% url 'posts:home' %}" class="btn btn-primary">
+            На главную
+        </a>
+    </div>
+</div>
+{% endblock %}
